@@ -1,1 +1,1 @@
-# geo-sem-token-distill
+# Geometry Aligned Semantic Feature Distillation
