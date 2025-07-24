@@ -1,0 +1,11 @@
+# =================================================
+# Global Configurations for the GeoSem Project
+# =================================================
+
+general:
+  device: "auto"
+  random_seed: 42
+
+paths:
+  clip_model_path: "/media/zzhang/openai/clip-vit-large-patch14"
+  vggt_model_path: "facebook/VGGT-1B"
