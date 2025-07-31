@@ -3,6 +3,8 @@ import yaml
 
 from third_party.vggt.vggt.models.vggt import VGGT
 from third_party.vggt.vggt.utils.load_fn import load_and_preprocess_images
+from third_party.vggt.vggt.utils.pose_enc import pose_encoding_to_extri_intri
+from third_party.vggt.vggt.utils.geometry import unproject_depth_map_to_point_map
 
 
 # Load Global Config
@@ -41,6 +43,22 @@ model = VGGT.from_pretrained(vggt_path).to(device)
 
 with torch.no_grad():
     with torch.amp.autocast('cuda', dtype=dtype):
-        # Predict attributes including cameras, depth maps, and point maps.
-        predictions = model(images)
-        print(predictions)
+        images = images[None]  # add batch dimension
+        aggregated_tokens_list, ps_idx = model.aggregator(images)
+
+    # Predict Cameras
+    pose_enc = model.camera_head(aggregated_tokens_list)[-1]
+    # Extrinsic and intrinsic matrices, following OpenCV convention (camera from world)
+    extrinsic, intrinsic = pose_encoding_to_extri_intri(pose_enc, images.shape[-2:])
+
+    # Predict Depth Maps
+    depth_map, depth_conf = model.depth_head(aggregated_tokens_list, images, ps_idx)
+
+    # Predict Point Maps
+    point_map, point_conf = model.point_head(aggregated_tokens_list, images, ps_idx)
+
+    # Construct 3D Points from Depth Maps and Cameras
+    # which usually leads to more accurate 3D points than point map branch
+    point_map_by_unprojection = unproject_depth_map_to_point_map(depth_map.squeeze(0),
+                                                                 extrinsic.squeeze(0),
+                                                                 intrinsic.squeeze(0))

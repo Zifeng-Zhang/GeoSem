@@ -4,8 +4,87 @@
 
 general:
   device: "auto"
+  amp_dtype: bf16
   random_seed: 42
+
 
 paths:
   clip_model_path: "/media/zzhang/openai/clip-vit-large-patch14"
   vggt_model_path: "facebook/VGGT-1B"
+
+
+optim:
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+
+
+model:
+  vggt:
+    ckpt_path: ${paths.vggt_model_path}
+    eval_mode: true
+    prefer_bf16: true         # use bf16 on Ampere+, else fp16
+    patch_stride: 14
+    num_reg_tokens: 5
+    return_depth_branch: true
+    return_camera_branch: true
+    return_unprojected_points: false
+
+  # CLIP meta
+  clip:
+    embed_dim: 768                 # CLIP ViT-L/14 shared embed dim (HF CLIPModel)
+
+  clip_teacher:
+    model_name: "openai/clip-vit-large-patch14"
+    image_size: 224
+    patch_size: 14
+    device: auto
+    dtype: bf16
+    normalize_out: true
+
+  projector:
+    # in_dim depends on projector placement. Use 2048 for "before_ptv3";
+    # if "after_ptv3", set this to PTv3 output channel count.
+    geo_in_dim: 2048
+    geo_out_dim: ${clip.embed_dim}  # tie to CLIP space
+    geo_norm: layernorm             # none|layernorm|batchnorm
+    geo_activation: gelu            # none|gelu
+    geo_dropout: 0.0
+    geo_l2norm: true
+
+
+lift_geo:
+  # Mapping & geometry
+  stride: 14                  # must match VGGTWrapper.meta.patch_stride
+  use_world_coords: false     # if true and camera extrinsic available -> transform to world
+
+  # Confidence handling
+  conf_activation: sigmoid    # sigmoid|softplus|none
+  conf_threshold: 0.5         # applied after activation if activation != none
+
+  # Sampling
+  max_points: 20000
+  per_view_quota: -1          # -1 means "auto" (distribute by valid-pixel counts)
+  strategy: topk_conf         # topk_conf|uniform|fps
+  fps_after_topk: true        # select 2x by conf, then FPS down to quota
+  random_seed: 42
+
+  # Bilinear sampling options
+  align_corners: false        # interpolation convention
+  clamp_grid: true            # clamp normalized grid to valid range
+
+  # Deduplication (disabled in PoC)
+  dedup:
+    enabled: false
+    method: voxel            # voxel|radius
+    voxel_size: 0.02
+    radius: 0.03
+
+  # Feature post-processing
+  normalize_feature: l2       # l2|none
+  return_weights: true
+  return_uv: true
+  return_view_ids: true
+
+
+pipeline:
+  projector_place: before_ptv3   # "before_ptv3" | "after_ptv3"
