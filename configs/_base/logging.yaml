@@ -1,0 +1,7 @@
+logging:
+  use_tensorboard: true
+  log_dir: runs/poc
+  scalar_interval: 10      # How many steps to record loss/acc/N_points
+  image_interval: 200      # How many steps to record input frame V
+  max_images: 4            # maximum images input frame V ( can be greater than 4)
+  flush_interval: 100      # How many steps to flush

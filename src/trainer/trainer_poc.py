@@ -100,7 +100,7 @@ class PoCTrainer:
             vggt_out = self.vggt.forward(images_bv)  # dict with xyz_map, conf_map, patch_tokens_2048, meta, camera
 
         # --- Geo lift & sampling ---
-        geo_pack = self.lifter.forward(vggt_out, scene_meta=None, batch_idx=0)
+        geo_pack = self.lifter.forward(vggt_out, batch_idx=0)
         feats_geo_raw = geo_pack["feats_geo_raw"].to(self.device)   # (N,2048), already L2-norm in default cfg
         weights = geo_pack.get("weights", None)                     # (N,) in [0,1]
         uv = geo_pack.get("uv", None)                               # (N,2) pixel (u,v) at VGGT size

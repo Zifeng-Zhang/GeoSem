@@ -1,0 +1,12 @@
+model:
+  projector:
+
+    # in_dim depends on projector placement. Use 2048 for "before_ptv3";
+    # if "after_ptv3", set this to PTv3 output channel count.
+
+    geo_in_dim: 2048
+    geo_out_dim: 768  # tie to CLIP space
+    geo_norm: layernorm             # none|layernorm|batchnorm
+    geo_activation: gelu            # none|gelu
+    geo_dropout: 0.0
+    geo_l2norm: true

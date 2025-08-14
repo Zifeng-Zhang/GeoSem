@@ -1,12 +1,10 @@
-# ScanNet++ PoC dataloader config
 data:
   root: "/media/zzhang/scannet_2d"
-  # A list of scene IDs or a txt file path, one per line
   scene_ids:
     - "scene0030_02"
     - "scene0001_00"
     # or: "configs/datasets/scannet_scenes_train.txt"
-
+    # "configs/scenes/scannetpp_small.txt"
   frames_per_sample: 2
 
   sampling:

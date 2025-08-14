@@ -22,8 +22,6 @@ class CLIPImageTeacher(nn.Module):
         model_name: HuggingFace id, e.g., "openai/clip-vit-large-patch14"
         image_size: int, CLIP input size (default 224 for ViT-L/14)
         patch_size: int, 14 for ViT-L/14 (do not change)
-        device: "cuda" | "cpu" | "auto"
-        dtype: "fp16" | "bf16" | "fp32"
         normalize_out: bool, L2-normalize patch tokens and per-point teacher
     """
 

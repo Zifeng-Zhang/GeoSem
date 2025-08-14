@@ -1,0 +1,10 @@
+model:
+  vggt:
+    ckpt_path: "facebook/VGGT-1B"
+    eval_mode: true
+    prefer_bf16: true         # use bf16 on Ampere+, else fp16
+    patch_stride: 14
+    num_reg_tokens: 5
+    return_depth_branch: true
+    return_camera_branch: true
+    return_unprojected_points: false

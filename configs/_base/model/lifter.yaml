@@ -1,0 +1,28 @@
+model:
+  lifter:
+    stride: 14                  # must match VGGTWrapper.meta.patch_stride
+    use_world_coords: false     # if true and camera extrinsic available -> transform to world
+
+    conf_activation: sigmoid    # sigmoid|softplus|none
+    conf_threshold: 0.5         # applied after activation if activation != none
+
+    max_points: 20000
+    per_view_quota: -1          # -1 means "auto" (distribute by valid-pixel counts)
+    strategy: topk_conf         # topk_conf|uniform|fps
+    fps_after_topk: true        # select 2x by conf, then FPS down to quota
+    random_seed: 42
+
+    align_corners: false        # interpolation convention
+    clamp_grid: true            # clamp normalized grid to valid range
+
+    normalize_feature: l2       # l2|none
+    return_weights: true
+    return_uv: true
+    return_view_ids: true
+
+    # Deduplication (disabled in PoC)
+    dedup:
+      enabled: false
+      method: voxel            # voxel|radius
+      voxel_size: 0.02
+      radius: 0.03

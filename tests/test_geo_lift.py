@@ -6,7 +6,7 @@ from src.models.geometry_backbone.vggt_wrapper import VGGTWrapper
 
 def test_geo_lifter_basic_shapes(cfg, vggt_out):
     lifter = GeoLifter(cfg)
-    out = lifter.forward(vggt_out, scene_meta=None, batch_idx=0)
+    out = lifter.forward(vggt_out, batch_idx=0)
 
     assert "coords" in out and "feats_geo_raw" in out
     N = out["coords"].shape[0]
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                                         "../examples/scannet_samples/scene0030_02/80.jpg"])
 
     lifter = GeoLifter(cfg['lift_geo'])
-    geo_pack = lifter.forward(vggt_out, scene_meta=None, batch_idx=0)
+    geo_pack = lifter.forward(vggt_out, batch_idx=0)
     print(geo_pack['coords'].shape, geo_pack['feats_geo_raw'].shape)
 
     print(vggt_out['patch_tokens_2048'].mean().item(), vggt_out['patch_tokens_2048'].std().item())

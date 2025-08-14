@@ -40,7 +40,7 @@ class GeoLifter:
         # sampling
         self.max_points: int = int(cfg.get("max_points", 16000))
         self.per_view_quota: int = int(cfg.get("per_view_quota", -1))  # -1 means auto
-        self.strategy: str = str(cfg.get("strategy", "topk_conf"))  # "topk_conf"|"uniform"|"fps"
+        self.strategy: str = str(cfg.get("strategy", "topk_conf"))
         self.fps_after_topk: bool = bool(cfg.get("fps_after_topk", False))
         self.random_seed: int = int(cfg.get("random_seed", 0))
 
@@ -48,20 +48,19 @@ class GeoLifter:
         self.align_corners: bool = bool(cfg.get("align_corners", False))
         self.clamp_grid: bool = bool(cfg.get("clamp_grid", True))
 
-        # dedup(de-duplication) (disabled by default in PoC)
-        self.dedup_cfg = cfg.get("dedup", {"enabled": False})
-
         # feature post-processing
         self.norm_feat: str = str(cfg.get("normalize_feature", "l2"))
         self.return_weights: bool = bool(cfg.get("return_weights", True))
         self.return_uv: bool = bool(cfg.get("return_uv", True))
         self.return_view_ids: bool = bool(cfg.get("return_view_ids", True))
 
+        # dedup(de-duplication) (disabled by default in PoC)
+        self.dedup_cfg = cfg.get("dedup", {"enabled": False})
+
     @torch.no_grad()
     def forward(
         self,
         vggt_out: Dict[str, Any],
-        scene_meta: Optional[Dict[str, Any]] = None,
         batch_idx: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
