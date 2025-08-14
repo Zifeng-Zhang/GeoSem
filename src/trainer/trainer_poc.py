@@ -2,6 +2,8 @@ from typing import Any, Dict, List
 
 import torch
 import torch.optim as optim
+from torchvision.utils import make_grid
+from torch.utils.tensorboard import SummaryWriter
 
 from src.models.geometry_backbone.vggt_wrapper import VGGTWrapper
 from src.models.geometry_backbone.geo_lifter import GeoLifter
@@ -44,6 +46,16 @@ class PoCTrainer:
         self.amp_dtype = torch.bfloat16 if cfg["general"].get("amp_dtype", "bf16") == "bf16" else torch.float16
         self.scaler = torch.cuda.amp.GradScaler(enabled=True)
 
+        # --- TensorBoard (optional) ---
+        log_cfg = cfg.get("logging", {})
+        self.use_tb = bool(log_cfg.get("use_tensorboard", False))
+        self.scalar_interval = int(log_cfg.get("scalar_interval", 10))
+        self.image_interval = int(log_cfg.get("image_interval", 200))
+        self.flush_interval = int(log_cfg.get("flush_interval", 100))
+        self.max_images = int(log_cfg.get("max_images", 4))
+        self.global_step = 0
+        self.writer = SummaryWriter(log_dir=log_cfg.get("log_dir", "runs/poc")) if self.use_tb else None
+
     def _images_to_pil_grid(self, images_bv: torch.Tensor) -> List[List["PIL.Image.Image"]]:
         """
         Convert a (B,V,3,H,W) uint8 tensor to nested list of PIL.Image.
@@ -59,6 +71,19 @@ class PoCTrainer:
                 row.append(to_pil_image(images_bv[b, v]))
             out.append(row)
         return out
+
+    @torch.no_grad()
+    def _tb_log_images(self, images_bv: torch.Tensor):
+        if not self.use_tb:
+            return
+        # images_bv: (1,V,3,H,W), dtype uint8 or float
+        V = images_bv.shape[1]
+        v_show = min(V, self.max_images)
+        imgs = images_bv[0, :v_show]  # (v_show,3,H,W)
+        if imgs.dtype == torch.uint8:
+            imgs = imgs.to(torch.float32) / 255.0
+        grid = make_grid(imgs, nrow=v_show, padding=2, normalize=False)
+        self.writer.add_image("input/images_grid", grid, global_step=self.global_step)
 
     def training_step(self, batch: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -110,6 +135,23 @@ class PoCTrainer:
         self.scaler.step(self.optimizer)
         self.scaler.update()
 
+        # --- TensorBoard scalars ---
+        if self.use_tb and (self.global_step % self.scalar_interval == 0):
+            self.writer.add_scalar("train/loss", float(loss.detach().item()), self.global_step)
+            self.writer.add_scalar("train/acc", float(loss_pack["acc"].detach().item()), self.global_step)
+            self.writer.add_scalar("train/N_points", int(feats_geo_raw.shape[0]), self.global_step)
+            # LR
+            for i, g in enumerate(self.optimizer.param_groups):
+                self.writer.add_scalar(f"lr/group_{i}", float(g["lr"]), self.global_step)
+
+        # --- TensorBoard images ---
+        if self.use_tb and (self.global_step % self.image_interval == 0):
+            self._tb_log_images(images_bv)
+
+        if self.use_tb and (self.global_step % self.flush_interval == 0):
+            self.writer.flush()
+
+        self.global_step += 1
         return {
             "loss": loss.detach().item(),
             "acc": loss_pack["acc"].detach().item(),
@@ -124,3 +166,7 @@ class PoCTrainer:
                 if it % log_interval == 0:
                     print(f"[ep {ep} it {it}] loss={out['loss']:.4f} acc={out['acc']:.3f} N={out['N_points']}")
                 it += 1
+        # --- NEW: close TensorBoard ---
+        if self.writer is not None:
+            self.writer.flush()
+            self.writer.close()

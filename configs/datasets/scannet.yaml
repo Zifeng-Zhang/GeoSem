@@ -1,0 +1,40 @@
+# ScanNet++ PoC dataloader config
+data:
+  root: "/media/zzhang/scannet_2d"
+  # A list of scene IDs or a txt file path, one per line
+  scene_ids:
+    - "scene0030_02"
+    - "scene0001_00"
+    # or: "configs/datasets/scannet_scenes_train.txt"
+
+  frames_per_sample: 2
+
+  sampling:
+    strategy: "sequential_window"   # "sequential_window" | "random_window" | "random_pairs"
+    window_stride: 1
+    temporal_stride: 1
+    epoch_len_per_scene: 500        # only used by random_* strategies
+    max_temporal_gap: null          # only used by random_pairs
+
+  io:
+    output_mode: "tensor"           # PoC: return Tensor directly
+    return_uint8: true              # uint8 [0..255]; set false for float32 [0..1]
+    convert_to_rgb: true
+    keep_aspect: true
+    max_side: null                  # e.g., 1024 to clamp; null = no change
+
+  dataloader_hints:
+    shuffle_scenes: true
+    seed: 0
+
+loader:
+  train:
+    batch_size: 1
+    num_workers: 6
+    pin_memory: true
+    drop_last: false
+  val:
+    batch_size: 1
+    num_workers: 4
+    pin_memory: true
+    drop_last: false

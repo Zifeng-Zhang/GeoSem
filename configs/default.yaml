@@ -20,7 +20,7 @@ optim:
 
 model:
   vggt:
-    ckpt_path: ${paths.vggt_model_path}
+    ckpt_path: "facebook/VGGT-1B"
     eval_mode: true
     prefer_bf16: true         # use bf16 on Ampere+, else fp16
     patch_stride: 14
@@ -88,3 +88,12 @@ lift_geo:
 
 pipeline:
   projector_place: before_ptv3   # "before_ptv3" | "after_ptv3"
+
+
+logging:
+  use_tensorboard: true
+  log_dir: runs/poc
+  scalar_interval: 10      # How many steps to record loss/acc/N_points
+  image_interval: 200      # How many steps to record input frame V
+  max_images: 4            # maximum images input frame V ( can be greater than 4)
+  flush_interval: 100      # How many steps to flush
