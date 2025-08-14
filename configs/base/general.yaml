@@ -1,5 +1,5 @@
 general:
-  device: "auto"
+  device: "cuda"
   amp_dtype: bf16
   random_seed: 42
 

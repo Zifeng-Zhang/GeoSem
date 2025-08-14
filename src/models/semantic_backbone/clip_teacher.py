@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 from transformers import CLIPModel, CLIPProcessor
 
 from src.utils.feature import bilinear_from_tokens_hw
@@ -47,7 +47,7 @@ class CLIPImageTeacher(nn.Module):
             self.autocast_dtype = torch.float32
 
         # load CLIP
-        self.processor = CLIPProcessor.from_pretrained(self.model_name)
+        self.processor = CLIPProcessor.from_pretrained(self.model_name, use_fast=True)
         self.model = CLIPModel.from_pretrained(self.model_name)
         self.model = self.model.eval().to(self.device)
 

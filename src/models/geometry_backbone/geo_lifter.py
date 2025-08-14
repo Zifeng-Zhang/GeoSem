@@ -363,7 +363,5 @@ class GeoLifter:
         w01 = (1.0 - tx) * ty
         w11 = tx * ty
 
-        print((w00 + w10 + w01 + w11 - 1).abs().max().item())
-
         feats = w00 * f00 + w10 * f10 + w01 * f01 + w11 * f11  # (N,C)
         return feats

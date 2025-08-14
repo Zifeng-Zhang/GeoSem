@@ -3,7 +3,7 @@ import yaml
 from src.models.geometry_backbone.vggt_wrapper import VGGTWrapper
 
 
-with open("../configs/_base/model/vggt.yaml", "r") as f:
+with open("../configs/base/model/vggt.yaml", "r") as f:
     cfg = yaml.safe_load(f)
 
 # Option 1: forward from image paths (uses VGGT's load_and_preprocess_images internally)

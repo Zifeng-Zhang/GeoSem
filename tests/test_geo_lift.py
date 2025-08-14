@@ -42,14 +42,17 @@ def test_geo_lifter_bilinear_values_center(cfg, vggt_out):
 
 
 if __name__ == "__main__":
-    with open("../configs/default.yaml", "r") as f:
+    with open("../configs/base/model/vggt.yaml", "r") as f:
         cfg = yaml.safe_load(f)
 
     vggt = VGGTWrapper(cfg['model']['vggt']).eval()
     vggt_out = vggt.forward_from_paths(["../examples/scannet_samples/scene0030_02/20.jpg",
                                         "../examples/scannet_samples/scene0030_02/80.jpg"])
 
-    lifter = GeoLifter(cfg['lift_geo'])
+    with open("../configs/base/model/lifter.yaml", "r") as f:
+        cfg = yaml.safe_load(f)
+
+    lifter = GeoLifter(cfg['model']['lifter'])
     geo_pack = lifter.forward(vggt_out, batch_idx=0)
     print(geo_pack['coords'].shape, geo_pack['feats_geo_raw'].shape)
 

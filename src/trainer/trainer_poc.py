@@ -10,6 +10,7 @@ from src.models.geometry_backbone.geo_lifter import GeoLifter
 from src.models.projectors import build_projectors
 from src.models.semantic_backbone.clip_teacher import CLIPImageTeacher
 from src.loss.info_nce import info_nce_pairwise
+from src.utils.config import ConfigLoader, ConfigValidator
 
 
 class PoCTrainer:
@@ -21,17 +22,22 @@ class PoCTrainer:
     We keep B=1 for PoC simplicity; extend batching as needed later.
     """
 
-    def __init__(self, cfg: Dict[str, Any]):
+    def __init__(self, cfg: dict[Any, Any]):
         self.cfg = cfg
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        device_setting = cfg["general"]["device"]
+        if device_setting == "auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch.device(device_setting)
 
         # --- Modules ---
-        self.vggt = VGGTWrapper(cfg["vggt"]).to(self.device).eval()  # frozen
-        self.lifter = GeoLifter(cfg["lift_geo"])                      # no params (no_grad inside)
-        self.teacher = CLIPImageTeacher(cfg["clip_teacher"])          # frozen CLIP
+        self.vggt = VGGTWrapper(cfg["model"]["vggt"]).to(self.device).eval()  # frozen
+        self.lifter = GeoLifter(cfg["model"]["lifter"])                      # no params (no_grad inside)
+        self.teacher = CLIPImageTeacher(cfg["model"]["clip_teacher"])          # frozen CLIP
 
         # Projector to CLIP space
-        clip_dim = int(cfg["clip"]["embed_dim"])
+        clip_dim = int(cfg["model"]["clip"]["embed_dim"])
         self.projectors = build_projectors(cfg, clip_embed_dim=clip_dim)
         self.projector_geo = self.projectors["geo"].to(self.device).train()
 
@@ -44,7 +50,7 @@ class PoCTrainer:
 
         # torch AMP
         self.amp_dtype = torch.bfloat16 if cfg["general"].get("amp_dtype", "bf16") == "bf16" else torch.float16
-        self.scaler = torch.cuda.amp.GradScaler(enabled=True)
+        self.scaler = torch.amp.GradScaler("cuda", enabled=True)
 
         # --- TensorBoard (optional) ---
         log_cfg = cfg.get("logging", {})
@@ -103,8 +109,8 @@ class PoCTrainer:
         geo_pack = self.lifter.forward(vggt_out, batch_idx=0)
         feats_geo_raw = geo_pack["feats_geo_raw"].to(self.device)   # (N,2048), already L2-norm in default cfg
         weights = geo_pack.get("weights", None)                     # (N,) in [0,1]
-        uv = geo_pack.get("uv", None)                               # (N,2) pixel (u,v) at VGGT size
-        view_ids = geo_pack.get("view_ids", None)                   # (N,)
+        uv = geo_pack.get("uv", torch.zeros())                               # (N,2) pixel (u,v) at VGGT size
+        view_ids = geo_pack.get("view_ids", torch.zeros())                   # (N,)
         H_vggt = vggt_out["meta"]["H"]
         W_vggt = vggt_out["meta"]["W"]
 
@@ -170,3 +176,10 @@ class PoCTrainer:
         if self.writer is not None:
             self.writer.flush()
             self.writer.close()
+
+# if __name__ == "__main__":
+#     cfg_path = "../../configs/exp/poc_scannetpp.yaml"
+#     base_path = "../../"
+#     cfg = ConfigLoader.load_config(cfg_path, base_path)
+#     ConfigValidator.validate_trainer_config(cfg)
+#     trainer = PoCTrainer(cfg)

@@ -1,10 +1,10 @@
 includes:
-  - configs/_base/general.yaml
-  - configs/_base/logging.yaml
-  - configs/_base/optim.yaml
-  - configs/_base/loss.yaml
-  - configs/_base/datasets/scannetpp.yaml
-  - configs/_base/model/vggt.yaml
-  - configs/_base/model/clip_teacher.yaml
-  - configs/_base/model/lifter.yaml
-  - configs/_base/model/projector.yaml
+  - configs/base/general.yaml
+  - configs/base/logging.yaml
+  - configs/base/optim.yaml
+  - configs/base/loss.yaml
+  - configs/base/datasets/scannetpp.yaml
+  - configs/base/model/vggt.yaml
+  - configs/base/model/clip_teacher.yaml
+  - configs/base/model/lifter.yaml
+  - configs/base/model/projector.yaml
